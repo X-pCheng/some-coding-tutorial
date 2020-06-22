@@ -1,0 +1,171 @@
+CREATE DATABASE UNIVERSITY
+ON  PRIMARY 
+( NAME = 'university_data', 
+  FILENAME = 'c:\database\uni_data.mdf' , 
+  SIZE = 3MB , 
+  MAXSIZE = 500MB , 
+  FILEGROWTH = 5%)
+ LOG ON 
+( NAME = 'university_log', 
+  FILENAME = 'c:\database\uni_log.ldf' , 
+  SIZE = 3MB , 
+  MAXSIZE = 100MB , 
+  FILEGROWTH = 5% 
+  )
+  go
+  
+ use UNIVERSITY
+ go
+ 
+create table department(
+dno char(6) primary key,
+dname char(8) unique not null,
+dhome varchar(40),
+dzipcode char(6),
+dtel varchar(40)
+)
+GO
+
+create table student(
+sno char(8) primary key,
+sname char(8) not null,
+sex char(2),
+birthday datetime,
+dno char(6),
+entime datetime,
+home varchar(40),
+tel varchar(40)
+constraint fk_dno foreign key(dno) references department(dno)
+)
+GO
+
+
+insert into department
+(dno,dname,dhome,dzipcode,dtel)
+values
+('1','法政学院','河北省石家庄市裕华区南二环东路20号','50024','80788100'),
+('2','教育学院','河北省石家庄市裕华区南二环东路20号','50024','80788101'),
+('3','软件学院','河北省石家庄市裕华区南二环东路20号','50024','80788102'),
+('4','数信学院','河北省石家庄市裕华区南二环东路20号','50024','80788102')
+
+go
+
+insert into student
+(sno,sname,sex,birthday,dno,entime,home,tel)
+values
+('20101001','张三','男','1989-03-15 ','1','2010-9-1','河北省沧州市',NULL),
+('20101002','张强','男','1990-05-01 ','1','2010-9-1','河北省邢台市','13145322345'),
+('20101003','张小兵','男','1991-05-02 ','2','2010-9-1','河北省唐山市',NULL),
+('20101004','李燕','女','1991-05-02 ','2','2010-9-1','山东省济南市','15194598762'),
+('20101005','李晓','女','1991-05-02 ','2','2010-9-1','山东省德州市','15394598762'),
+('20101006','上官青','女','1993-05-02 ','3','2010-9-1','陕西省西安市',NULL),
+('20101007','李晓芳','女','1993-05-02 ','1','2010-9-1','陕西省西安市','15867598762'),
+('20101008','上官文宏','女','1988-05-02 ','3','2010-9-1','北京市','15897598762'),
+('20101009','上官文宏','女','1988-05-02 ','3','2010-9-1','山东省青岛市','15897598762'),
+('20101010','张倩','女','1988-11-02 ','2','2010-9-1','河北省保定市','13897595671'),
+('20101011','刘英伟','男','1988-11-02 ','3','2010-9-1','河北省保定市','15197595671'),
+('20101012','刘伟','男','1989-11-02 ','2','2010-9-1','河北省保定市','15397595671'),
+('20101013','翟南','男','1989-11-21 ','4','2010-9-1','上海市','137093837332'),
+('20101014','窦士厝','男','1988-10-02 ','4','2010-9-1','云南省昆明市','131311948930')
+
+go
+
+CREATE NONCLUSTERED INDEX SBIRTHDAY_IDX
+ON STUDENT(BIRTHDAY)
+
+go
+
+
+CREATE NONCLUSTERED INDEX DTEL_HOME_IDX
+ON DEPARTMENT(DTEL ASC,DHOME DESC)
+
+GO
+
+
+select * from sys.indexes
+GO
+
+exec sp_helpindex department
+go
+
+exec sp_helpindex student
+go
+
+
+CREATE RULE entime_date_rule
+AS @entime_date>='2016-01-01' and 	@entime_date<=getdate()
+
+GO
+
+SP_HELPTEXT ENTIME_DATE_RULE
+
+CREATE RULE sex_rule
+AS @sex in ('男','女')
+
+GO
+
+CREATE rule telphone_rule
+	As @value like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+
+GO
+
+EXEC sp_bindrule entime_date_rule,'student.entime'
+
+go
+
+insert into student
+(sno,sname,sex,birthday,dno,entime,home,tel)
+values
+('20101031','张华','男','1989-03-15 ','1','2010-9-1','河北省沧州市',NULL)
+
+go
+
+insert into department
+(dno,dname,dhome,dzipcode,dtel)
+values
+('7','航海学院','河北省石家庄市裕华区南二环东路20号','50024','88200')
+
+GO
+
+EXEC sp_bindrule telphone_rule,'department.dtel'
+go
+
+
+EXEC sp_unbindrule 'student.entime'
+go
+
+EXEC sp_unbindrule 'department.dtel'
+go
+
+CREATE DEFAULT entime_defa
+AS '2017-09-01'
+
+go
+
+EXEC sp_bindefault entime_defa, 'student.entime'
+go
+
+
+alter table student
+drop constraint fk_dno
+
+go
+
+alter table student
+add constraint fk_dno 
+foreign key (dno) 
+REFERENCES department(dno)
+ON DELETE CASCADE
+ON UPDATE CASCADE
+
+go
+
+update department set dno='8' where dname='数信学院'
+go
+
+select * from student
+go
+
+delete from department where dname='法政学院'
+go
+
